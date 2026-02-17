@@ -292,7 +292,6 @@ if os.path.exists(os.path.join(frontend_dist, "assets")):
 # Catch-all route to serve React
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
-    return FileResponse("frontend/dist/index.html")
     # Check if the file exists in the root of dist (e.g. favicon.ico, manifest.json)
     file_path = os.path.join(frontend_dist, full_path)
     if os.path.isfile(file_path):
