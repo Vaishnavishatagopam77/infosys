@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, PieChart, BookOpen, User, LogOut } from 'lucide-react';
 import { DashboardContent } from './components/DashboardContent';
-import { Login, Signup } from './components/Auth';
+import { Login, Signup, ForgotPassword } from './components/Auth';
 import './components/styles.css';
 
 const API_URL = import.meta.env.PROD ? '' : 'http://localhost:8000';
@@ -170,10 +170,14 @@ function App() {
   if (!token) {
     return (
       <div style={{ height: '100vh', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {authMode === 'login' ? (
-          <Login onLogin={(t) => setToken(t)} onSwitchToSignup={() => setAuthMode('signup')} />
-        ) : (
+        {authMode === 'login' && (
+          <Login onLogin={(t) => setToken(t)} onSwitchToSignup={() => setAuthMode('signup')} onForgotPassword={() => setAuthMode('forgot')} />
+        )}
+        {authMode === 'signup' && (
           <Signup onLogin={(t) => setToken(t)} onSwitchToLogin={() => setAuthMode('login')} />
+        )}
+        {authMode === 'forgot' && (
+          <ForgotPassword onBackToLogin={() => setAuthMode('login')} />
         )}
       </div>
     );

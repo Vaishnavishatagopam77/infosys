@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Union
 import random
-from datetime import timedelta
+from datetime import timedelta, datetime
+import secrets
+from pydantic import BaseModel, ConfigDict
 
 # Local imports
 from content_db import CONTENT, TOPICS
@@ -39,6 +41,15 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
 class EvaluateQuizRequest(BaseModel):
     topic: str
     user_answers: Dict[str, str]
@@ -63,9 +74,7 @@ class QuizResultSchema(BaseModel):
     score: float
     passed: bool
     timestamp: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Auth Endpoints ---
 
@@ -99,6 +108,43 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         data={"sub": user.username}, expires_delta=timedelta(minutes=30)
     )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/forgot-password")
+def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.email == req.email).first()
+    # Always return success message to avoid revealing existence
+    if not user:
+        return {"message": "If the email exists, a reset link has been sent."}
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+    pr = models.PasswordReset(user_id=user.id, token=token, expires_at=expires_at)
+    db.add(pr)
+    db.commit()
+
+    reset_link = f"https://example.com/reset-password?token={token}"
+    # In production, send email. For now print to server logs.
+    print(f"Password reset link for {user.email}: {reset_link}")
+
+    return {"message": "If the email exists, a reset link has been sent."}
+
+
+@app.post("/reset-password")
+def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+    pr = db.query(models.PasswordReset).filter(models.PasswordReset.token == req.token).first()
+    if not pr or pr.expires_at < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = db.query(models.User).filter(models.User.id == pr.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
+    user.hashed_password = auth_handler.get_password_hash(req.new_password)
+    db.delete(pr)
+    db.commit()
+
+    return {"message": "Password has been reset successfully."}
 
 @app.get("/users/me")
 def read_users_me(current_user: models.User = Depends(auth_handler.get_current_user)):
