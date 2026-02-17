@@ -4,7 +4,7 @@ import { DashboardContent } from './components/DashboardContent';
 import { Login, Signup, ForgotPassword } from './components/Auth';
 import './components/styles.css';
 
-const API_URL = import.meta.env.PROD ? '' : 'http://localhost:8000';
+const API_URL = "https://your-backend-url.onrender.com";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
