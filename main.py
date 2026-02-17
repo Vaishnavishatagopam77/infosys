@@ -5,15 +5,11 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Union
 import random
-<<<<<<< HEAD
 from datetime import timedelta, datetime
 import secrets
 from pydantic import BaseModel, ConfigDict
-=======
-from datetime import timedelta
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
->>>>>>> f24241c9e07d8b42465c0d560872f33baed817c0
 
 # Local imports
 from content_db import CONTENT, TOPICS
