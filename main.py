@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any, Union
 import random
 from datetime import timedelta
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 # Local imports
 from content_db import CONTENT, TOPICS
@@ -232,8 +234,7 @@ def get_reassessment(req: ReassessmentRequest):
     return generated_questions
 
 # --- Static Files & SPA Serve ---
-from fastapi.staticfiles import StaticFiles
-from starlette.responses import FileResponse
+
 import os
 
 # Define the path to the frontend build directory
@@ -241,11 +242,11 @@ frontend_dist = os.path.join(os.path.dirname(__file__), "frontend", "dist")
 
 # Mount assets directory (Vite puts assets in dist/assets)
 if os.path.exists(os.path.join(frontend_dist, "assets")):
-    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
-
-# Catch-all route to serve index.html for client-side routing
+    app.mount("/assets", StaticFiles(directory="frontend/dist/assets"), name="assets")
+# Catch-all route to serve React
 @app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
+async def serve_react_app(full_path: str):
+    return FileResponse("frontend/dist/index.html")
     # Check if the file exists in the root of dist (e.g. favicon.ico, manifest.json)
     file_path = os.path.join(frontend_dist, full_path)
     if os.path.isfile(file_path):
